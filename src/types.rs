@@ -1,12 +1,10 @@
-use rocket::serde::Deserialize;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize)]
-#[serde(crate = "rocket::serde")]
-pub struct ExecuteData<'r> {
-    pub language: &'r str,
-    pub code: &'r str,
-    pub input: &'r str,
+pub struct ExecuteData {
+    pub language: String,
+    pub code: String,
+    pub input: String,
     pub time_limit: u64,
     pub memory_limit: u64,
     pub wall_time_limit: u64,
@@ -22,6 +20,10 @@ pub struct Limit {
 pub enum RunStatus {
     #[serde(rename = "success")]
     Success,
+
+    #[serde(rename = "ce")]
+    CompileError,
+
     #[serde(rename = "tle")]
     TimeLimitExceeded,
 

@@ -10,8 +10,8 @@ pub struct Runner {
 }
 
 const BANNED_SYSCALLS: &[&str] = &[
-    "fork", "execveat", "vfork", "clone", "ptrace", "mount", "umount", "clone3", "poweroff",
-    "reboot", "socket", "bind", "connect", "listen", "sendto", "recvfrom",
+    "mount", "umount", "poweroff", "reboot", "socket", "bind", "connect", "listen", "sendto",
+    "recvfrom",
 ];
 
 impl Runner {
@@ -71,6 +71,7 @@ impl Runner {
         let mut cmd = self.container.command(program);
         cmd.current_dir("/box")
             .args(args)
+            .env("PATH", "/bin")
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped());

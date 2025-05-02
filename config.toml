@@ -1,0 +1,10 @@
+code_dir = "/home/harrow/judger"
+
+[languages.python3]
+run = ["/bin/python3", "/box/program.py"]
+extension = "py"
+
+[languages.cpp-20]
+compile = ["/bin/g++", "-o", "/box/program", "/box/program.cpp"]
+run = ["/box/program"]
+extension = "cpp"
