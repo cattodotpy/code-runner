@@ -109,6 +109,10 @@ impl Runner {
         let resource = match output.status.rusage {
             Some(r) => r,
             None => {
+                eprintln!(
+                    "Failed to get resource usage: {}",
+                    String::from_utf8_lossy(&output.stderr)
+                );
                 return RunOutput::error(
                     "Failed to get resource usage".to_string(),
                     Some(output.stderr),

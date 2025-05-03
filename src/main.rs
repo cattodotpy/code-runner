@@ -2,7 +2,7 @@ mod config;
 mod runner;
 mod types;
 
-use std::{env, io, path::PathBuf};
+use std::{env, path::PathBuf};
 
 use axum::{
     Json, Router,
