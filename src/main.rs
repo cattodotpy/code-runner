@@ -2,7 +2,7 @@ mod config;
 mod runner;
 mod types;
 
-use std::{io, path::PathBuf};
+use std::{env, io, path::PathBuf};
 
 use axum::{
     Json, Router,
@@ -51,7 +51,8 @@ async fn execute(
 
     let box_path = path.join(&box_name);
 
-    if let Err(e) = fs::create_dir(&box_path).await {
+    if let Err(e) = fs::create_dir_all(&box_path).await {
+        eprintln!("Unable to create directory: {}", e.to_string());
         return (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(RunOutput::error(
@@ -68,6 +69,7 @@ async fn execute(
 
     let file = box_path.join(format!("{}.{}", PROGRAM_NAME, language.extension));
     if let Err(e) = fs::write(&file, &data.code).await {
+        eprintln!("Unable to write file: {}", e.to_string());
         return (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(RunOutput::error(
@@ -140,6 +142,8 @@ async fn execute(
         _ => StatusCode::OK,
     };
 
+    println!("Execution completed with status: {:?}", status);
+
     (status, Json(result))
 }
 
@@ -160,9 +164,15 @@ async fn main() {
     // initialize tracing
     tracing_subscriber::fmt::init();
 
-    let config: Result<String, io::Error> = fs::read_to_string("config.toml").await;
+    let config: Option<String> = fs::read_to_string(
+        env::args()
+            .nth(1)
+            .unwrap_or("/etc/code-runner/config.toml".to_string()),
+    )
+    .await
+    .ok();
 
-    if config.is_err() {
+    if config.is_none() {
         eprintln!("Unable to read config file.");
         return;
     }
@@ -175,6 +185,8 @@ async fn main() {
     }
 
     let config = config.unwrap();
+
+    let languages_len = config.languages.len();
 
     let addr = config.address.clone().unwrap_or("0.0.0.0".to_string());
     let port = config.port.clone().unwrap_or(8080);
@@ -189,5 +201,6 @@ async fn main() {
         .unwrap();
 
     println!("listening on {}", listener.local_addr().unwrap());
+    println!("running with {} languages", languages_len);
     axum::serve(listener, app).await.unwrap();
 }
