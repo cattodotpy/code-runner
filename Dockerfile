@@ -2,15 +2,15 @@ FROM debian:bullseye-slim
 
 # Install dependencies
 RUN apt-get update && apt-get install -y \
-    build-essential \
-    curl \
-    gcc \
-    g++ \
-    pkg-config \
-    libssl-dev \
-    python3 \
-    python3-pip \
-    libseccomp-dev \
+	build-essential \
+	curl \
+	gcc \
+	g++ \
+	pkg-config \
+	libssl-dev \
+	python3 \
+	python3-pip \
+	libseccomp-dev \
 	&& rm -rf /var/lib/apt/lists/*
 
 # Install Rust
@@ -23,8 +23,6 @@ WORKDIR /app
 COPY . .
 
 RUN cargo build --release
-
-RUN /bin/restorecon -v /app/target/release/code-runner
 
 EXPOSE $PORT
 
