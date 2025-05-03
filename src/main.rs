@@ -7,6 +7,7 @@ use std::{io, path::PathBuf};
 use axum::{
     Json, Router,
     extract::State,
+    http::StatusCode,
     routing::{get, post},
 };
 use config::Config;
@@ -25,9 +26,12 @@ struct AppState {
 async fn execute(
     State(AppState { config }): State<AppState>,
     data: Json<ExecuteData>,
-) -> Json<RunOutput> {
+) -> (StatusCode, Json<RunOutput>) {
     if !config.languages.contains_key(&data.language) {
-        return Json(RunOutput::error("Unknown language".to_string(), None, None));
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(RunOutput::error("Unknown language".to_string(), None, None)),
+        );
     }
 
     let path = config.code_dir.clone();
@@ -47,15 +51,32 @@ async fn execute(
 
     let box_path = path.join(&box_name);
 
-    fs::create_dir(&box_path).await.ok();
+    if let Err(e) = fs::create_dir(&box_path).await {
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(RunOutput::error(
+                format!("Unable to create directory: {}", e.to_string()),
+                None,
+                None,
+            )),
+        );
+    }
 
     let mut runner = Runner::new(box_path.to_str().unwrap());
 
     let language = config.languages.get(&data.language).unwrap();
 
     let file = box_path.join(format!("{}.{}", PROGRAM_NAME, language.extension));
-
-    fs::write(&file, &data.code).await.ok();
+    if let Err(e) = fs::write(&file, &data.code).await {
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(RunOutput::error(
+                format!("Unable to write file: {}", e.to_string()),
+                None,
+                None,
+            )),
+        );
+    }
 
     if let Some(compile) = language.compile.clone() {
         let mut iter = compile.iter();
@@ -80,13 +101,16 @@ async fn execute(
         };
 
         if compilation_error {
-            return Json(RunOutput {
-                status: RunStatus::CompileError,
-                stderr: compile_out.stderr,
-                stdout: compile_out.stdout,
-                runtime: compile_out.runtime,
-                memory_usage: compile_out.memory_usage,
-            });
+            return (
+                StatusCode::OK,
+                Json(RunOutput {
+                    status: RunStatus::CompileError,
+                    stderr: compile_out.stderr,
+                    stdout: compile_out.stdout,
+                    runtime: compile_out.runtime,
+                    memory_usage: compile_out.memory_usage,
+                }),
+            );
         }
     }
 
@@ -100,14 +124,23 @@ async fn execute(
         run_command,
         run_args,
         Some(Limit {
-            time_limit: Some(data.time_limit),
-            memory: Some(data.memory_limit),
-            walltime_limit: Some(data.wall_time_limit),
+            time_limit: data.time_limit,
+            memory: data.memory_limit,
+            walltime_limit: data.wall_time_limit,
         }),
-        Some(data.input.as_bytes().to_vec()),
+        if data.input.is_some() {
+            Some(data.input.as_ref().unwrap().as_bytes().to_vec())
+        } else {
+            None
+        },
     );
 
-    Json(result)
+    let status = match result.status {
+        RunStatus::SystemError(_) | RunStatus::UnknownError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+        _ => StatusCode::OK,
+    };
+
+    (status, Json(result))
 }
 
 async fn get_languages(State(AppState { config }): State<AppState>) -> Json<Value> {

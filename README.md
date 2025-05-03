@@ -23,6 +23,7 @@ A secure, sandboxed API service for executing code in various programming langua
 
 - Rust toolchain (2024 edition)
 - Linux environment (required for containerization features) (WSL or Docker are supported and tested.)
+- (seccomp)[https://github.com/libseccomp-rs/libseccomp-rs#requirements]
 
 ### Building
 

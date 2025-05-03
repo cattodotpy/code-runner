@@ -4,10 +4,10 @@ use serde::{Deserialize, Serialize};
 pub struct ExecuteData {
     pub language: String,
     pub code: String,
-    pub input: String,
-    pub time_limit: u64,
-    pub memory_limit: u64,
-    pub wall_time_limit: u64,
+    pub input: Option<String>,
+    pub time_limit: Option<u64>,
+    pub memory_limit: Option<u64>,
+    pub wall_time_limit: Option<u64>,
 }
 
 pub struct Limit {
