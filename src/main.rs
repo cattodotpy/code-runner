@@ -4,9 +4,14 @@ mod types;
 
 use std::{io, path::PathBuf};
 
-use axum::{Json, Router, extract::State, routing::post};
+use axum::{
+    Json, Router,
+    extract::State,
+    routing::{get, post},
+};
 use config::Config;
 use runner::Runner;
+use serde_json::{Value, json};
 use tokio::fs;
 use types::{ExecuteData, Limit, RunOutput, RunStatus};
 
@@ -105,6 +110,18 @@ async fn execute(
     Json(result)
 }
 
+async fn get_languages(State(AppState { config }): State<AppState>) -> Json<Value> {
+    let languages = config
+        .languages
+        .keys()
+        .map(|key| key.to_string())
+        .collect::<Vec<String>>();
+
+    Json(json!({
+        "languages": languages
+    }))
+}
+
 #[tokio::main]
 async fn main() {
     // initialize tracing
@@ -129,12 +146,11 @@ async fn main() {
     let addr = config.address.clone().unwrap_or("0.0.0.0".to_string());
     let port = config.port.clone().unwrap_or(8080);
 
-    // build our application with a route
     let app = Router::new()
         .route("/code", post(execute))
+        .route("/languages", get(get_languages))
         .with_state(AppState { config });
 
-    // run our app with hyper, listening globally on port 3000
     let listener = tokio::net::TcpListener::bind(format!("{}:{}", addr, port))
         .await
         .unwrap();
