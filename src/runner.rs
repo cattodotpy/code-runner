@@ -111,7 +111,7 @@ impl Runner {
             None => {
                 eprintln!(
                     "Failed to get resource usage: {}",
-                    String::from_utf8_lossy(&output.stderr)
+                   output_status.reason
                 );
                 return RunOutput::error(
                     "Failed to get resource usage".to_string(),

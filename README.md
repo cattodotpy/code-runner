@@ -23,7 +23,7 @@ A secure, sandboxed API service for executing code in various programming langua
 
 - Rust toolchain (2024 edition)
 - Linux environment (required for containerization features) (WSL or Docker are supported and tested.)
-- (seccomp)[https://github.com/libseccomp-rs/libseccomp-rs#requirements]
+- [seccomp](https://github.com/libseccomp-rs/libseccomp-rs#requirements)
 
 ### Building
 
@@ -74,9 +74,9 @@ Request body:
 {
 	"language": "python3",
 	"code": "print('Hello, world!')",
-	"input": "",
+	"input": null,
 	"time_limit": 2,
-	"memory_limit": 67108864,
+	"memory_limit": 67108864, // 64MB
 	"wall_time_limit": 5
 }
 ```
@@ -85,9 +85,12 @@ Response:
 
 ```json
 {
-	"status": "Success",
-	"stdout": "Hello, world!",
-	"stderr": "",
+	"status": "success",
+	"stdout": [
+		72, 101, 108, 108, 111, 44, 32, 119,
+		111, 114, 108, 100, 33
+	], // Hello, world! in bytes
+	"stderr": [],
 	"runtime": 42,
 	"memory_usage": 8192
 }
